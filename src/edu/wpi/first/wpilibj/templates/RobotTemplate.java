@@ -17,11 +17,8 @@ import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 
 /**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the SimpleRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the manifest file in the resource
- * directory.
+ * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as described in the SimpleRobot documentation. If you change the name of this class or
+ * the package after creating this project, you must also update the manifest file in the resource directory.
  */
 public class RobotTemplate extends SimpleRobot {
 
@@ -38,8 +35,10 @@ public class RobotTemplate extends SimpleRobot {
     DigitalInput limit;
     boolean fingerState = true;
     boolean fingerButtonState = false;
+    boolean controlState = true;
     Potentiometer potentiometer;
     Compressor compressor;
+    double shooterPosition;
 
     protected void robotInit() {
         shooterJoystick = new Joystick(3);
@@ -76,6 +75,7 @@ public class RobotTemplate extends SimpleRobot {
             Display.clear();
             getWatchdog().feed();
             driveFwdRot(getDriveForward(), getDriveRotation());
+            //press either trigger on drive sticks to switch gears
             shiftDriveGear(driverLeftJoystick.getRawButton(1) || driverRightJoystick.getRawButton(1));
             //button 5 to pull winch back
             if (shooterJoystick.getRawButton(5)) {
@@ -94,31 +94,35 @@ public class RobotTemplate extends SimpleRobot {
             } else {
                 winchSolenoid.set(DoubleSolenoid.Value.kForward);
             }
-            final boolean rawButton = shooterJoystick.getRawButton(2);
+            final boolean rawButtonPressed = shooterJoystick.getRawButton(2);
 
             //button 2 to set finger to forward, 3 for off, default for forward
-            if (rawButton && rawButton != fingerButtonState) {
+            if (rawButtonPressed && rawButtonPressed != fingerButtonState) {
                 fingerState = !fingerState;
                 fingerSolenoid.set(fingerState ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
             }
-            fingerButtonState = rawButton;
+            fingerButtonState = rawButtonPressed;
 
             //button 4 for pickup, 6 for purge
             if (shooterJoystick.getRawButton(4)) {
-                roller.set(-1);
+                roller.set(-.7);
             } else if (shooterJoystick.getRawButton(6)) {
                 roller.set(1);
             } else {
                 roller.set(0);
             }
 
-            if (shooterJoystick.getY() < -.4) {
-                pivot.set(.3);
-            } else if (shooterJoystick.getY() > .4) {
-                pivot.set(-.3);
-            } else {
+            shooterPosition = shooterJoystick.getY();
+            if (shooterPosition < -.1) 
+                pivot.set(shooterPosition - .2);
+            
+            else if (shooterPosition > .1) 
+                pivot.set(shooterPosition + .2);
+           
+             
+             else 
                 pivot.set(0);
-            }
+            
 
             Display.queue("" + potentiometer.pidGet());
             Display.println(2, "" + potentiometer.pidGet());
